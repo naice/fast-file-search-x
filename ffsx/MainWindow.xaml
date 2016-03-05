@@ -1,0 +1,200 @@
+﻿<Window x:Class="ffsx.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="clr-namespace:ffsx.Controls"
+        xmlns:t="http://schemas.xceed.com/wpf/xaml/toolkit"
+        Title="FastFileSearchX" Height="571" Width="804.15" Icon="Bejeweled.ico" DataContext="{StaticResource MainViewModel}">
+    
+    <Grid Background="{StaticResource AppBackground}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+
+        <!-- Dirtree -->
+        <Grid Grid.Column="0">
+            <c:DirectoryViewer Width="200" 
+                               DirectorySelected="OnDirectorySelected" 
+                               DirectoryRightClick="OnDirectoryRightClick"
+                               x:Name="DvDirtree" 
+                               Favorites="{Binding Favorites, Mode=TwoWay}">
+                <c:DirectoryViewer.Resources>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" 
+                                     Color="{StaticResource AppButtonHighlightColor}" />
+                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" 
+                                     Color="{StaticResource AppButtonBackgroundColor}" />
+                </c:DirectoryViewer.Resources>
+            </c:DirectoryViewer>
+            <Border BorderBrush="{StaticResource AppBorder}" BorderThickness="0,0,1,0"/>
+        </Grid>
+        
+        <!-- Content -->
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            
+            <!-- Search Control -->
+            <Grid Grid.Row="0">
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <t:WatermarkTextBox 
+                        x:Name="EdSearch"
+                        Style="{StaticResource StyleWatermarkTextBox}"
+                        Grid.Column="0"
+                        Margin="10"
+                        Text="{Binding SearchToken, Mode=TwoWay}" 
+                        Watermark="Search..." 
+                        TextChanged="OnTextBox_TextChanged"/>
+                    <Button 
+                        IsDefault="True"
+                        Grid.Column="1"
+                        Margin="0,10,10,10"
+                        Content="Search"
+                        Click="OnSearchClicked"/>
+                </Grid>
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <ComboBox Grid.Column="0"
+                              Width="120"
+                              Margin="10,0,0,10"
+                              IsEditable="True"
+                              Text="{Binding SelectedFileMask}"
+                              TextBoxBase.TextChanged="OnTextBox_TextChanged"
+                              ItemsSource="{Binding FileMasks}"/>
+                    
+                    <t:WatermarkTextBox 
+                        x:Name="EdPath"
+                        Style="{StaticResource StyleWatermarkTextBox}"
+                        Grid.Column="1"
+                        Margin="10,0,10,10"
+                        Text="{Binding SearchPath, Mode=TwoWay}" 
+                        Watermark="Path..." 
+                        TextChanged="OnTextBox_TextChanged"/>
+                </Grid>
+            </Grid>
+
+            <!-- Search Results -->
+            <Grid Grid.Row="1">                
+                <TabControl ItemsSource="{Binding Searches}" 
+                            SelectedValue="{Binding SelectedSearch, Mode=TwoWay}">
+                    <!-- HEADER TEMPLATE -->
+                    <TabControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <Rectangle Fill="{StaticResource AppAccent}" Grid.Column="0" Margin="0,0,5,0" RenderTransformOrigin=".5,.5" Visibility="{Binding Searching, Converter={StaticResource BoolToVisibilityConverter}}"
+                                           Width="16" Height="16" >
+                                    <Rectangle.OpacityMask>
+                                        <ImageBrush ImageSource="/Res/loading.png"/>
+                                    </Rectangle.OpacityMask>
+                                    <Rectangle.RenderTransform>
+                                        <RotateTransform  Angle="0" />
+                                    </Rectangle.RenderTransform>
+                                    <Rectangle.Triggers>
+                                        <EventTrigger RoutedEvent="Image.Loaded">
+                                            <BeginStoryboard Name="StoryboardPopulation">
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetProperty="(Image.RenderTransform).(RotateTransform.Angle)" 
+                                                                     To="-360" Duration="0:0:0.5" RepeatBehavior="Forever" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </EventTrigger>
+                                    </Rectangle.Triggers>
+                                </Rectangle>
+                                <TextBlock Grid.Column="1" 
+                                           Text="{Binding}"/>
+                                <Rectangle Grid.Column="2" Margin="5,0,0,0" VerticalAlignment="Top"
+                                           Width="10" Height="10" MouseLeftButtonUp="OnCloseSearch">
+                                    <Rectangle.OpacityMask>
+                                        <ImageBrush ImageSource="/Res/close.png"/>
+                                    </Rectangle.OpacityMask>
+                                    <Rectangle.Style>
+                                        <Style TargetType="{x:Type Rectangle}">
+                                            <Setter Property="Fill" Value="{StaticResource AppForeground}" />
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Fill" Value="{StaticResource AppAccent}" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Rectangle.Style>
+                                </Rectangle>
+                            </Grid>
+                        </DataTemplate>
+                    </TabControl.ItemTemplate>
+                    <!-- CONTENT TEMPLATE -->
+                    <TabControl.ContentTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
+                                <Grid Grid.Row="0" Background="{StaticResource AppButtonBackgroundBrush}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition />
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Margin="3,0,5,0"><Run Text="Mask: "/><Run Text="{Binding FileMasks, Converter={StaticResource FileMaskConverter}}"/></TextBlock>
+                                    <TextBlock Grid.Column="1" Margin="5,0" TextTrimming="CharacterEllipsis"><Run Text="Path: "/><Run Text="{Binding Directory}"/></TextBlock>
+                                    <TextBlock Grid.Column="2" Margin="5,0"><Run Text="Started: "/><Run Text="{Binding Started, StringFormat=\{0:F\}}"/></TextBlock>
+                                    <TextBlock Grid.Column="3" Margin="5,0"><Run Text="Found: "/><Run Text="{Binding ResultCount, Mode=OneWay}"/></TextBlock>
+                                    <!--<TextBlock Grid.Column="3" Margin="5,0"><Run Text="Duration: "/><Run Text="{Binding Duration}"/></TextBlock>-->
+                                </Grid>
+                                <ListBox Grid.Row="1"  
+                                         ItemsSource="{Binding Result}" 
+                                         Style="{StaticResource StyleListBox}" 
+                                         SelectionMode="Extended"
+                                         ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                    <ListBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid MouseRightButtonUp="OnResultItemRightButtonUp" DataContext="{Binding}">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition />
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>                                            
+                                                <Image Grid.Column="0" Margin="0,0,5,0" Width="24" Height="24" Source="{Binding Image}" />
+                                                <Grid Grid.Column="1">
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding File.Name}" TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock Text="{Binding File.DirectoryName}" Cursor="Hand" Foreground="{StaticResource AppSubtitle}" TextTrimming="CharacterEllipsis" MouseLeftButtonUp="OnResultDirectoryClicked"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                                <TextBlock Grid.Column="2" Text="{Binding File.Length, Converter={StaticResource FileSizeConverter}}" />
+                                                <!--
+                                                <TextBlock Grid.Column="4" Text="{Binding File.Name}" />
+                                                <TextBlock Grid.Column="5" Text="{Binding File.Name}" />
+                                                -->                                                
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListBox.ItemTemplate>
+                                </ListBox>
+                            </Grid>
+                        </DataTemplate>
+                    </TabControl.ContentTemplate>
+                </TabControl>                
+            </Grid>
+        </Grid>
+
+    </Grid>
+</Window>
